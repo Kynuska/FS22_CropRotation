@@ -16,6 +16,10 @@
 -- 	v1.0.0.0 (03.08.2022):
 --      - Initial release
 --
+----------------------------------------------------------------------------------------------------
+-- Based on FS19_RM_Seasons/src/growth/SeasonsGrowthData.lua
+-- Copyright (c) Realismus Modding, 2019
+----------------------------------------------------------------------------------------------------
 
 CropRotationData = {}
 CropRotationData.debug = false -- true --
