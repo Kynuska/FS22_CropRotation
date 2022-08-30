@@ -250,6 +250,8 @@ end
 -- Show crop rotation info on player HUD without PRECISION FARMING (not tested yet)
 function CropRotation:fieldAddFruit(data, box)
     local cropRotation = g_cropRotation
+    assert(cropRotation ~= nil)
+
     if cropRotation.crFieldInfo ~= nil then
         local crYieldMultiplier = cropRotation:getRotationYieldMultiplier(cropRotation.crFieldInfo.n2,
                                                                           cropRotation.crFieldInfo.n1,
@@ -257,8 +259,8 @@ function CropRotation:fieldAddFruit(data, box)
         local level = CropRotation.getLevelByMultiplier(crYieldMultiplier)
 
         local isColorBlindMode = g_gameSettings:getValue(GameSettings.SETTING.USE_COLORBLIND_MODE) or false
-        local color, text = self.cache.colors[level]
-        local title = self.cache.fieldInfo_title
+        local color, text = cropRotation.cache.colors[level]
+        local title = cropRotation.cache.fieldInfo_title
         
         box:addLine(string.format("%s (%s)", title, text),
                     string.format("%d %s", math.floor(100 * crYieldMultiplier), "%"),
@@ -289,11 +291,12 @@ function CropRotation:updateFieldInfoDisplay(fieldInfo, startWorldX, startWorldZ
     local value = string.format("%s | %s", cropRotation:getCategoryName(n1),
                                            cropRotation:getCategoryName(n2))
 
-    if cropRotation.fruitTypeIndex == FruitType.UNKNOWN then
+    local fruitTypeIndex = cropRotation.fruitTypeIndex or FruitType.UNKNOWN
+    if fruitTypeIndex == FruitType.UNKNOWN then
         return value, nil, nil
     end
 
-    fieldInfo.crFactor = cropRotation:getRotationYieldMultiplier(n2, n1, cropRotation.fruitTypeIndex)
+    fieldInfo.crFactor = cropRotation:getRotationYieldMultiplier(n2, n1, fruitTypeIndex)
 
     local level = CropRotation.getLevelByMultiplier(fieldInfo.crFactor)
 
@@ -681,17 +684,22 @@ end
 ---Calculate the yield multiplier based on the crop history, fallow state, and harvested fruit type
 function CropRotation:getRotationYieldMultiplier(n2, n1, fruitType)
     local fruitDesc = self.fruitTypeManager:getFruitTypeByIndex(fruitType)
-	
-	if fruitDesc.rotation == nil then
-		return 1.0
-	end
 
-	local current = fruitDesc.rotation.category
+    if fruitDesc == nil then
+        log(string.format("FruitDesc not found for index %d", fruitType))
+        return 1.0
+    end
 
-	local returnPeriod = self:getRotationReturnPeriodMultiplier(n2, n1, current, fruitDesc)
-	local rotationCategory = self:getRotationCategoryMultiplier(n2, n1, current)
+    if fruitDesc.rotation == nil then
+        return 1.0
+    end
 
-	return returnPeriod * rotationCategory
+    local current = fruitDesc.rotation.category
+
+    local returnPeriod = self:getRotationReturnPeriodMultiplier(n2, n1, current, fruitDesc)
+    local rotationCategory = self:getRotationCategoryMultiplier(n2, n1, current)
+
+    return returnPeriod * rotationCategory
 end
 
 function CropRotation:getRotationReturnPeriodMultiplier(n2, n1, current, fruitDesc)
